@@ -24,6 +24,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  transition: background .4s ease, color .4s ease;
+}
+
+:root[data-theme='light'] body {
+  background: radial-gradient(120% 80% at 50% 0%, #fff 0%, var(--bg) 60%);
 }
 
 button {
@@ -123,12 +128,12 @@ button {
 /* ===== Ring ===== */
 .ring {
   position: relative;
-  width: 300px;
-  height: 300px;
+  width: clamp(232px, 72vmin, 320px);
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
 }
-.ring-svg { position: absolute; inset: 0; }
+.ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ring-track { stroke: rgba(255, 255, 255, 0.06); fill: none; }
 .ring-fill {
   stroke: var(--mode-color);
@@ -142,6 +147,7 @@ button {
   50% { filter: drop-shadow(0 0 14px var(--mode-accent)); }
 }
 .ring-center { text-align: center; user-select: none; }
+button.ring-time { border: none; background: none; padding: 0; cursor: default; }
 .ring-time {
   font-size: 64px;
   font-weight: 700;
@@ -149,6 +155,34 @@ button {
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
+.ring-time.editable { cursor: pointer; transition: opacity .15s ease; }
+.ring-time.editable:hover { opacity: .65; }
+.ring-edit {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+.ring-edit input {
+  width: clamp(92px, 26vmin, 140px);
+  font: inherit;
+  font-size: clamp(40px, 11vmin, 60px);
+  font-weight: 700;
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--mode-accent);
+  color: var(--text);
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0 4px;
+  transition: border-color .2s;
+}
+.ring-edit input:focus { border-color: var(--mode-color); }
+.ring-edit input::-webkit-outer-spin-button,
+.ring-edit input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ring-edit input[type='number'] { -moz-appearance: textfield; }
+.ring-edit-unit { font-size: clamp(13px, 4vmin, 18px); color: var(--text-dim); }
 .ring-label {
   margin-top: 10px;
   font-size: 14px;
@@ -188,28 +222,6 @@ button {
 }
 .today-tomatoes { font-size: 18px; letter-spacing: 2px; min-height: 22px; }
 .today-text { font-size: 13px; color: var(--text-dim); }
-
-/* ===== Hotkeys ===== */
-.hotkeys {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  padding: 14px 0 18px;
-  font-size: 12px;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-.hotkeys span { display: inline-flex; align-items: center; gap: 4px; }
-kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--line);
-  color: var(--text);
-}
 
 /* ===== Modal ===== */
 .modal-backdrop {
@@ -369,20 +381,18 @@ input[type='range']::-moz-range-thumb {
 /* ===== Responsive: phones ===== */
 @media (max-width: 420px) {
   .app { padding-left: 16px; padding-right: 16px; }
-  .ring { width: 260px; height: 260px; }
-  .ring-time { font-size: 56px; }
   .mode-tab { padding: 7px 14px; font-size: 13px; }
   .stat-num { font-size: 19px; }
-  .hotkeys { gap: 12px; font-size: 11px; }
   .ctrl-main { width: 80px; height: 80px; }
   .icon-btn.ctrl-side { width: 52px; height: 52px; }
+  .icon-btn { width: 44px; height: 44px; }
+  .topbar-actions { gap: 4px; }
+  .stage { gap: 22px; }
 }
 
 /* Larger desktop: a touch more breathing room */
 @media (min-width: 720px) {
   .app { max-width: 560px; }
-  .ring { width: 320px; height: 320px; }
-  .ring-time { font-size: 68px; }
 }
 
 /* Reduced motion */
@@ -390,4 +400,38 @@ input[type='range']::-moz-range-thumb {
   .ring.running .ring-fill { animation: none; }
   .modal { animation: none; }
   .modal-backdrop { animation: none; }
+}
+:root[data-theme='light'] {
+  --bg: #f7f3f0;
+  --surface: #ffffff;
+  --surface-2: #efe9e4;
+  --text: #2a201d;
+  --text-dim: #7a6a63;
+  --line: rgba(0, 0, 0, 0.08);
+  --mode-color: #d63a2f;
+  --mode-accent: #e84a3f;
+  color-scheme: light;
+}
+
+/* Light-theme element overrides: 白色半透明叠层在浅色背景下不可见,翻转成黑色,
+   并给圆环轨道一个明确的浅灰。 */
+:root[data-theme='light'] .icon-btn { background: rgba(0, 0, 0, 0.04); }
+:root[data-theme='light'] .icon-btn:hover { background: rgba(0, 0, 0, 0.08); }
+:root[data-theme='light'] .icon-btn.ctrl-side { background: rgba(0, 0, 0, 0.05); }
+:root[data-theme='light'] .ring-track { stroke: rgba(0, 0, 0, 0.08); }
+:root[data-theme='light'] .mode-tabs { background: rgba(0, 0, 0, 0.05); }
+:root[data-theme='light'] .mode-progress .dot { background: rgba(0, 0, 0, 0.25); }
+:root[data-theme='light'] .mode-progress .dot.on { background: var(--mode-color); }
+:root[data-theme='light'] .stat-card { background: rgba(0, 0, 0, 0.04); }
+:root[data-theme='light'] .bar-track { background: rgba(0, 0, 0, 0.04); }
+:root[data-theme='light'] .btn.ghost { background: rgba(0, 0, 0, 0.05); }
+:root[data-theme='light'] input[type='range'] { background: rgba(0, 0, 0, 0.12); }
+:root[data-theme='light'] input[type='range']::-webkit-slider-thumb { border-color: var(--mode-color); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
+:root[data-theme='light'] .modal-backdrop { background: rgba(40, 32, 30, 0.45); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); }
+:root[data-theme='light'] .modal { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); }
+:root[data-theme='light'] .ring-fill { filter: drop-shadow(0 0 5px rgba(216, 58, 47, 0.35)); }
+:root[data-theme='light'] .ring.running .ring-fill { animation: ring-breathe-light 3s ease-in-out infinite; }
+@keyframes ring-breathe-light {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(216, 58, 47, 0.35)); }
+  50% { filter: drop-shadow(0 0 10px rgba(216, 58, 47, 0.5)); }
 }

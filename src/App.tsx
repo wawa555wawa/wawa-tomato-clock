@@ -23,12 +23,21 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showStats, setShowStats] = useState(false)
   const [confirming, setConfirming] = useState<Mode | null>(null)
+  const [editingTime, setEditingTime] = useState(false)
+  const [theme, setTheme] = useLocalStorage<'light' | 'dark'>(
+    'wawa.theme',
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  )
   const endAtRef = useRef<number>(0)
   const timerRef = useRef<number | null>(null)
 
   const totalSeconds = useMemo(() => settings[mode] * 60, [settings, mode])
   const progress = useMemo(() => 1 - remaining / totalSeconds, [remaining, totalSeconds])
   const modeCfg = MODES[mode]
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
   useEffect(() => {
     if (!running) setRemaining(settings[mode] * 60)
@@ -96,6 +105,12 @@ export default function App() {
     handleComplete()
   }, [handleComplete])
 
+  const commitTime = useCallback((minutes: number) => {
+    setSettings((s) => ({ ...s, [mode]: minutes }))
+    setRemaining(minutes * 60)
+    setEditingTime(false)
+  }, [mode, setSettings])
+
   const switchMode = useCallback((m: Mode) => {
     if (running) {
       setConfirming(m)
@@ -150,6 +165,7 @@ export default function App() {
           <span className="brand-text">Wawa · 番茄钟</span>
         </div>
         <div className="topbar-actions">
+          <IconBtn icon={theme === 'light' ? 'moon' : 'sun'} label={theme === 'light' ? '切换深色' : '切换浅色'} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
           <IconBtn icon="stats" label="统计" onClick={() => setShowStats(true)} />
           <IconBtn icon="gear" label="设置" onClick={() => setShowSettings(true)} />
         </div>
@@ -157,7 +173,17 @@ export default function App() {
 
       <main className="stage">
         <ModeTabs mode={mode} onSwitch={switchMode} completed={completedFocus} longEvery={settings.longEvery} />
-        <CircularProgress progress={progress} remaining={remaining} modeLabel={modeCfg.label} running={running} />
+        <CircularProgress
+          progress={progress}
+          remaining={remaining}
+          modeLabel={modeCfg.label}
+          running={running}
+          editable
+          editing={editingTime}
+          onRequestEdit={() => setEditingTime(true)}
+          onCommitTime={commitTime}
+          onCancelEdit={() => setEditingTime(false)}
+        />
         <Controls running={running} onStart={startTimer} onPause={pauseTimer} onReset={resetTimer} onSkip={skip} />
         <div className="today-strip">
           <span className="today-tomatoes" aria-hidden>
@@ -166,13 +192,6 @@ export default function App() {
           <span className="today-text">今日 {todayStats.count} 个番茄 · {todayStats.minutes} 分钟</span>
         </div>
       </main>
-
-      <footer className="hotkeys">
-        <span><kbd>Space</kbd> 开始/暂停</span>
-        <span><kbd>R</kbd> 重置</span>
-        <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 切换模式</span>
-      </footer>
-
       {showSettings && <SettingsModal settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />}
       {showStats && <StatsModal history={history} onClose={() => setShowStats(false)} />}
       {confirming && (
